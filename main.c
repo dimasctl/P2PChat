@@ -1,10 +1,10 @@
+#include "include/criptografia.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
-
-#include "criptografia.h"
 
 // Este programa vai ler um input no terminal e vai retornar a mesma mensagem,
 // mas separando a mensagem em pacotes de 4 bytes, e imprimirá cada pacote em

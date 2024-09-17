@@ -1,9 +1,8 @@
-#include<openssl/evp.h>
-#include<openssl/aes.h>
-#include<openssl/rand.h>
+#include "../include/criptografia.h"
 
-#define AES_256_KEY_SIZE 32
-#define AES_BLOCK_SIZE 16
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+#include <openssl/aes.h>
 
 void print_hex(unsigned char *data, int len) {
     // Função para imprimir os dados em hexadecimal
