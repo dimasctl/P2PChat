@@ -45,7 +45,7 @@ dados de seu usuário. Caso contrário, o cliente2 retorna uma mensagem de conex
 
 - [x] Implementar a biblioteca de criptografia
 - [x] Fazer o multithreading do cliente
-- [ ] Implementar a comunicação P2P
+- [-] Implementar a comunicação P2P
 - [ ] Implementar o servidor
 - [ ] Implementar a comunicação entre cliente e servidor
 - [ ] Definir o protocolo de comunicação com mais exatidão
