@@ -1,99 +1,92 @@
-#include "include/criptografia.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
-// Este programa vai ler um input no terminal e vai retornar a mesma mensagem,
-// mas separando a mensagem em pacotes de 4 bytes, e imprimirá cada pacote em
-// uma linha diferente.
+#include <pthread.h>
 
-char *read_input() {
-    // Função para ler o input do terminal independente do tamanho da mensagem
-    char *input = NULL;
-    size_t len = 0;
-    ssize_t read;
+#define PORT 8080
 
-    read = getline(&input, &len, stdin);
-    if (read == -1) {
-        printf("Erro ao ler a mensagem\n");
-        exit(1);
-    }
-    
-    return input;
-}
+#include "include/server.h"
+#include "include/client.h"
 
+pthread_t server_thread, client_thread;
 
-// Função secundária que fica contando os segundos enquanto
-// o programa está esperando o input do usuário
-void *count_seconds(void *arg) {
-    int seconds = 0;
-    int imprimir = 0;
-    while (1) {
-        sleep(1);
-        seconds++;
-        if (imprimir) {
-            printf("Segundos: %d\n", seconds);
-            imprimir = 0;
-        }
-    }
-}
+typedef struct con {
+    char ip[16];
+    int port;
+    struct con* next;
+} Connection;
 
+typedef struct {
+    char* username;
+    char* user_id;
+    Connection* connections;
+} ConnectionList;
 
+char* get_input();
 
-void print_message(char *message, char *key, char *iv) {
-    // Função para imprimir a mensagem em pacotes de 4 bytes
-    // Como a mensagem é uma string, cada caractere ocupa 1 byte
-    int i = 0;
-    // Retirar o \n do final da mensagem
-    message[strlen(message)-1] = '\0';
-
-    printf("\n");
-    // Separar a mensagem em pacotes de 10 bytes e criptografar cada pacote
-    while (i < strlen(message)) {
-        unsigned char *ciphertext = (unsigned char *)malloc(strlen(message) + AES_BLOCK_SIZE);
-        int ciphertext_len = encrypt_message((unsigned char *)message + i, AES_BLOCK_SIZE, key, iv, ciphertext);
-        if (ciphertext_len == -1) {
-            printf("Erro ao criptografar a mensagem\n");
-            return;
-        }
-
-        printf("Pacote %d: ", i / AES_BLOCK_SIZE);
-        print_hex(ciphertext, ciphertext_len);
-        printf("Pacote %d descriptografado: ", i / AES_BLOCK_SIZE);
-        unsigned char *plaintext = (unsigned char *)malloc(ciphertext_len);
-        int plaintext_len = decrypt_message(ciphertext, ciphertext_len, key, iv, plaintext);
-        if (plaintext_len == -1) {
-            printf("Erro ao descriptografar a mensagem\n");
-            return;
-        }
-
-        // Adicionar o \0 no final da string
-        plaintext[plaintext_len] = '\0';
-        printf("%s\n\n", plaintext);
-
-        i += AES_BLOCK_SIZE;
-        free(ciphertext);
-    }
-
-
-    free(message);
-    printf("Fim da mensagem\n");
-}
 int main() {
-    // Iniciar a thread que conta os segundos
-    //pthread_t thread;
-    //pthread_create(&thread, NULL, count_seconds, NULL);
-
-    // Gerar a chave e o IV
-    unsigned char **key_iv = generate_key_iv();
-
-    printf("\n\nDigite a mensagem: ");
+    system("clear");
+    printf("Welcome to P2PChat!\n");
     fflush(stdout);
-    // Ler a mensagem do usuário e imprimir a mensagem em pacotes de 4 bytes
-    char *message = read_input();
-    print_message(message, key_iv[0], key_iv[1]);
+
+    // Create a server thread
+    if (pthread_create(&server_thread, NULL, server, NULL) != 0) {
+        perror("pthread_create");
+        exit(EXIT_FAILURE);
+    }
+
+    while (1) {
+        char* message;
+        // Read the message from the user including spaces, allocate memory dynamically
+        message = get_input();
+
+
+        printf("For which IP address do you want to send the message?\n");
+        fflush(stdout);
+        char ip[16];
+        scanf("%s", ip);
+
+        printf("For which port do you want to send the message?\n");
+        fflush(stdout);
+        int port;
+        scanf("%d", &port);
+
+        // run the client function
+        send_message(message, ip, port);
+
+        // Free the memory allocated by getline
+        free(message);
+    }
+    // Wait for the server thread to finish
+    pthread_join(server_thread, NULL);
+
     return 0;
+}
+
+// Function to get the input from the user dynamically
+char* get_input() {
+  // Initialize the input buffer
+  char* input = NULL;
+  size_t len = 0;
+  ssize_t read;
+
+  read = getline(&input, &len, stdin);
+  // If there is only a newline character, try again
+  if (read == 1) {
+    free(input);
+    return get_input();
+  }
+
+  if (read == -1) {
+    perror("getline");
+    exit(EXIT_FAILURE);
+  }
+
+  // Remove the newline character from the input
+  input[strlen(input) - 1] = '\0';
+
+  return input;
 }

@@ -30,13 +30,11 @@ void* handle_receive_message(void* arg) {
 
 // Creates a listening socket and accepts incoming connections
 // by creating a new socket for each connection
-void* server(void* arg) {
+void* server() {
     int server_fd, new_socket;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
-    char buffer[1024] = {0};
-    char *hello = "Hello from server";
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {

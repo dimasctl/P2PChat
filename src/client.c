@@ -6,7 +6,7 @@
 
 #include <pthread.h>
 
-int client(char* message, char* ip, int port) {
+int send_message(char* message, char* ip, int port) {
     int sock = 0;
     struct sockaddr_in serv_addr;
 
