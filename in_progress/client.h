@@ -35,6 +35,7 @@ int client(char* message, char* ip, int port) {
 
     // Send message to server
     send(sock, message, strlen(message), 0);
+    printf("Message '%s' sent\n", message);
 
     // Close the socket
     close(sock);

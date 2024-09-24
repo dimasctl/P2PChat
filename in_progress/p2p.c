@@ -39,8 +39,6 @@ int main() {
     }
 
     while (1) {
-        printf("You can now enter your message:\n");
-        fflush(stdout);
         char* message;
         // Read the message from the user including spaces, allocate memory dynamically
         message = get_input();
@@ -70,35 +68,25 @@ int main() {
 
 // Function to get the input from the user dynamically
 char* get_input() {
-    size_t size = 10;
-    char* input = malloc(size);
-    if (input == NULL) {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
+  // Initialize the input buffer
+  char* input = NULL;
+  size_t len = 0;
+  ssize_t read;
 
-    size_t len = 0;
-    int c;
+  read = getline(&input, &len, stdin);
+  // If there is only a newline character, try again
+  if (read == 1) {
+    free(input);
+    return get_input();
+  }
 
-    //if the first character is '\n', ignore it
-    if ((c = getchar()) == '\n') {
-        c = getchar();
-    }
+  if (read == -1) {
+    perror("getline");
+    exit(EXIT_FAILURE);
+  }
 
-    while ((c = getchar()) != '\n' && c != EOF) {
-        if (len + 1 >= size) {
-            size *= 2;
-            char* tmp = realloc(input, size);
-            if (!tmp) {
-                free(input);
-                printf("Memory reallocation failed\n");
-                return NULL;
-            }
-            input = tmp;
-        }
-        input[len++] = c;
-    }
+  // Remove the newline character from the input
+  input[strlen(input) - 1] = '\0';
 
-    input[len] = '\0';
-    return input;
+  return input;
 }
