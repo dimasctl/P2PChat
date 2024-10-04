@@ -8,8 +8,8 @@
 
 #define PORT 8080
 
-#include "server.h"
-#include "client.h"
+#include "include/server.h"
+#include "include/client.h"
 
 pthread_t server_thread, client_thread;
 
@@ -55,7 +55,7 @@ int main() {
         scanf("%d", &port);
 
         // run the client function
-        client(message, ip, port);
+        send_message(message, ip, port);
 
         // Free the memory allocated by getline
         free(message);

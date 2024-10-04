@@ -44,10 +44,13 @@ int main() {
         message = get_input();
 
 
-        printf("For which IP address do you want to send the message?\n");
+        printf("For which IP address do you want to send the message? (Default: 127.0.0.1)\n");
         fflush(stdout);
         char ip[16];
         scanf("%s", ip);
+        if (strcmp(ip, "") == 0) {
+            strcpy(ip, "127.0.0.1");
+        }
 
         printf("For which port do you want to send the message?\n");
         fflush(stdout);

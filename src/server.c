@@ -1,28 +1,58 @@
+#include "../include/criptografia.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <string.h>
 #include <arpa/inet.h>
+
 #include <pthread.h>
+
+// Function to measure time taken between two points
+#include <time.h>
+#include <sys/time.h>
+struct timeval start;
+void get_time_diff(struct timeval* start) {
+    struct timeval end;
+    gettimeofday(&end, NULL);
+    // Calculate the time taken. If it is bigger than 1 second, print the time in seconds
+    if (end.tv_sec - start->tv_sec > 0) {
+        printf("%ld seconds\n", end.tv_sec - start->tv_sec);
+    } else {
+        printf("%ld microseconds\n", end.tv_usec - start->tv_usec);
+    }
+    gettimeofday(start, NULL);
+}
 
 void* handle_receive_message(void* arg) {
     int new_socket = *(int*)arg;
-    char* buffer;
+    unsigned char* buffer;
 
-    // Receive messages bigger than 1024 bytes
-    printf("Received message: ");
-    // print the whole message
-    while (1) {
-        buffer = (char*)malloc(1024);
-        memset(buffer, 0, 1024);
-        int valread = read(new_socket, buffer, 1024);
-        if (valread == 0) {
-            break;
-        }
-        printf("%s", buffer);
-        free(buffer);
-    }
-    printf("\n");
+    // Receive the key
+    size_t shared_key_len = AES_256_KEY_SIZE;
+    unsigned char* key = ecdh(&shared_key_len, &new_socket);
+
+    // Receive the IV
+    unsigned char iv[AES_BLOCK_SIZE];
+    read(new_socket, iv, AES_BLOCK_SIZE);
+
+    // Receive the message length
+    int message_len;
+    read(new_socket, &message_len, sizeof(int));
+    message_len = ntohl(message_len);
+
+    // Allocate memory for the message
+    buffer = (unsigned char*)malloc(message_len * sizeof(unsigned char));
+
+    // Receive the message
+    read(new_socket, buffer, message_len);
+
+    // Decrypt the message
+    char* decrypted_message = (char*)decrypt_message(buffer, &message_len, key, iv);
+
+    // Print the decrypted message
+    printf("Message received: %s\n", decrypted_message);
+
     // Closing the socket
     close(new_socket);
     return NULL;
@@ -67,7 +97,6 @@ void* server() {
     // Continuously accept incoming connections
     while (1) {
         // Listening for incoming connections
-        printf("Waiting for a connection...\n");
         if (listen(server_fd, 3) < 0) {
             perror("listen failed");
             exit(EXIT_FAILURE);
@@ -80,7 +109,6 @@ void* server() {
             exit(EXIT_FAILURE);
         }
 
-        printf("Connection established with the client\n");
 
         // Create a thread to handle the client
         pthread_t client_thread;
