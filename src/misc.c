@@ -1,9 +1,11 @@
 #include "../include/misc.h"
+#include "../include/client.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #define UUID_LEN 36
 #define UUID_FILE "uuid.bin"
@@ -70,12 +72,16 @@ void add_client(client_info** head, char* ip, int port, char* id) {
 }
 
 client_info* print_clients(client_info* head) {
+    int select=0;
     while (1) {
         // clear the screen
         printf("\033[H\033[J");
 
+        // print my uuid
+        printf("My UUID: %s\n", get_uuid());
+
         client_info* current = head;
-        int i=0, select=0;
+        int i=0;
         while (current != NULL) {
             // if the client is selected, print the client in green
             if (select == i) {
@@ -119,10 +125,24 @@ client_info* print_clients(client_info* head) {
             }
             return current;
         }
+        if (c == 'r') {
+            send_broadcast();
+            printf("Broadcast sent\n");
+            sleep(5);
+        }
     }
 }
 
-void process_messages(client_info** head, char** messages) {
+void process_messages(client_info** head, char*** messages_array) {
+    char** messages = *messages_array;
+    // print all the messages
+    printf("----------------------------------------\n");
+    for (int i = 0; i < 10; i++) {
+        if (messages[i] == NULL || strlen(messages[i]) == 0) {
+            break;
+        }
+        printf("%s\n", messages[i]); fflush(stdout);
+    }
     int num_messages = 10;
     for (int i = 0; i < num_messages; i += 2) {
         if (messages[i] == NULL || strlen(messages[i]) == 0) {
@@ -130,6 +150,7 @@ void process_messages(client_info** head, char** messages) {
         }
         char* ip1 = messages[i];      // IP address in position i
         char* message1 = messages[i + 1];  // Message in position i + 1
+        printf("i: %d - ip1: %s - message1: %s\n", i, ip1, message1); fflush(stdout);
 
         for (int j = i + 2; j < num_messages; j += 2) {
             if (messages[j] == NULL || strlen(messages[j]) == 0) {
@@ -137,6 +158,7 @@ void process_messages(client_info** head, char** messages) {
             }
             char* ip2 = messages[j];      // IP address in position j
             char* message2 = messages[j + 1];  // Message in position j + 1
+            printf("j: %d - ip2: %s - message2: %s\n", j, ip2, message2); fflush(stdout);
 
             // Compare the two IP addresses
             if (ip1 == NULL || ip2 == NULL) {
@@ -156,6 +178,13 @@ void process_messages(client_info** head, char** messages) {
                 }
                 // add the client to the list
                 add_client(head, ip1, atoi(port), uuid);
+
+                // clear the messages
+                messages[i] = NULL;
+                messages[i + 1] = NULL;
+                messages[j] = NULL;
+                messages[j + 1] = NULL;
+
                 break;
             }
         }

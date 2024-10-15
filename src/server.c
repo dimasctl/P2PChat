@@ -187,7 +187,7 @@ void* listen_broadcast(void* arg) {
             pointer = (pointer + 2) % 10;
 
             // check if there are 2 messages from the same IP
-            process_messages(&client_list, messages);
+            process_messages(&client_list, &messages);
         }
     }
     close(sock);
