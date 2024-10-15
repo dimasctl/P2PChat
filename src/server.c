@@ -1,4 +1,5 @@
 #include "../include/criptografia.h"
+#include "../include/misc.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +8,8 @@
 #include <arpa/inet.h>
 
 #include <pthread.h>
+
+void* listen_broadcast(void* arg);
 
 // Function to measure time taken between two points
 #include <time.h>
@@ -92,6 +95,15 @@ void* server() {
     // Get the port number assigned to the server
     getsockname(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
 
+    // start broadcasting listener
+    printf("asdfasdf"); fflush(stdout);
+    int port = (int)ntohs(address.sin_port);
+    pthread_t broadcast_thread;
+    if (pthread_create(&broadcast_thread, NULL, listen_broadcast, &port) != 0) {
+        perror("pthread_create");
+        exit(EXIT_FAILURE);
+    }
+
     printf("Server setup complete. Listening on port %d\n", ntohs(address.sin_port));
 
     // Continuously accept incoming connections
@@ -123,6 +135,9 @@ void* server() {
 }
 
 void* listen_broadcast(void* arg) {
+    int port = *(int*)arg;
+    char port_str[6];
+    sprintf(port_str, "%d", port);
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
         printf("Error creating socket\n");
@@ -156,9 +171,10 @@ void* listen_broadcast(void* arg) {
         printf("Broadcast message received from %s:%d - %s\n", inet_ntoa(sender.sin_addr), ntohs(sender.sin_port), buffer);
 
         if (strcmp(buffer, "Discovery") == 0) {
-            char* message = "Response";
-            // Send a response to the sender on the port 12345, that is the port the sender is listening on, but not the port the sender is sending from
+            char* message = get_uuid();
+            // Send a response to the sender on the port 12345
             sender.sin_port = htons(12345);
+            sendto(sock, port_str, strlen(port_str), 0, (struct sockaddr*)&sender, sender_len);
             sendto(sock, message, strlen(message), 0, (struct sockaddr*)&sender, sender_len);
             printf("Response sent to %s:%d\n", inet_ntoa(sender.sin_addr), ntohs(sender.sin_port));
         }
