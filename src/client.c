@@ -78,3 +78,35 @@ int send_message(char* message, char* ip, int port) {
     close(sock);
     return 0;
 }
+
+void send_broadcast() {
+    // Create a socket
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) {
+        printf("Error creating socket\n");
+        return;
+    }
+
+    // Enable broadcast
+    int broadcast = 1;
+    if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
+        printf("Error setting broadcast\n");
+        return;
+    }
+
+    // Set the server address
+    struct sockaddr_in server;
+    memset(&server, 0, sizeof(server));
+    server.sin_family = AF_INET;
+    server.sin_port = htons(12345);
+    server.sin_addr.s_addr = inet_addr("255.255.255.255");
+
+    // Send the message
+    char message[] = "Discovery";
+    sendto(sock, message, strlen(message), 0, (struct sockaddr*)&server, sizeof(server));
+    printf("Broadcast message sent\n");
+
+    // Close the socket
+    close(sock);
+    return;
+}

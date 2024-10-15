@@ -37,6 +37,16 @@ int main() {
         perror("pthread_create");
         exit(EXIT_FAILURE);
     }
+    // Create a broadcast listener thread
+    if (pthread_create(&client_thread, NULL, listen_broadcast, NULL) != 0) {
+        perror("pthread_create");
+        exit(EXIT_FAILURE);
+    }
+
+    while (1) {
+        send_broadcast();
+        sleep(5);
+    }
 
     while (1) {
         char* message;

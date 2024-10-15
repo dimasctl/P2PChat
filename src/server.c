@@ -121,3 +121,69 @@ void* server() {
 
     return NULL;
 }
+
+void* listen_broadcast(void* arg) {
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) {
+        printf("Error creating socket\n");
+        return NULL;
+    }
+
+    // Configure the reveiver address
+    struct sockaddr_in receiver;
+    receiver.sin_family = AF_INET;
+    receiver.sin_port = htons(12345);
+    receiver.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    // Bind the socket to the port
+    if (bind(sock, (struct sockaddr*)&receiver, sizeof(receiver)) < 0) {
+        printf("Error binding socket\n");
+        close(sock);
+        return NULL;
+    }
+
+    // Continuously listen for broadcast messages
+    while (1) {
+        char buffer[1024];
+        struct sockaddr_in sender;
+        socklen_t sender_len = sizeof(sender);
+
+        // Receive the broadcast message
+        int len = recvfrom(sock, buffer, 1024, 0, (struct sockaddr*)&sender, &sender_len);
+        buffer[len] = '\0';
+
+        // Print the broadcast message
+        printf("Broadcast message received from %s:%d - %s\n", inet_ntoa(sender.sin_addr), ntohs(sender.sin_port), buffer);
+
+        if (strcmp(buffer, "Discovery") == 0) {
+            // Send a response to the client
+            int client_sock = socket(AF_INET, SOCK_STREAM, 0);
+            if (client_sock < 0) {
+                printf("Error creating socket\n");
+                return NULL;
+            }
+
+            // Connect to the client
+            struct sockaddr_in client;
+            client.sin_family = AF_INET;
+            client.sin_port = htons(12345);
+            client.sin_addr.s_addr = sender.sin_addr.s_addr;
+
+            if (connect(client_sock, (struct sockaddr*)&client, sizeof(client)) < 0) {
+                printf("Error connecting to client\n");
+                close(client_sock);
+                return NULL;
+            }
+
+            // Send the message
+            char message[] = "Hello from the server";
+            write(client_sock, message, strlen(message));
+            printf("Message sent to client\n");
+
+            // Close the socket
+            close(client_sock);
+        }
+    }
+    close(sock);
+    return NULL;
+}
