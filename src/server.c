@@ -129,7 +129,7 @@ void* listen_broadcast(void* arg) {
         return NULL;
     }
 
-    // Configure the reveiver address
+    // Configure the receiver address
     struct sockaddr_in receiver;
     receiver.sin_family = AF_INET;
     receiver.sin_port = htons(12345);
@@ -156,32 +156,11 @@ void* listen_broadcast(void* arg) {
         printf("Broadcast message received from %s:%d - %s\n", inet_ntoa(sender.sin_addr), ntohs(sender.sin_port), buffer);
 
         if (strcmp(buffer, "Discovery") == 0) {
-            // Send a response to the client
-            int client_sock = socket(AF_INET, SOCK_STREAM, 0);
-            if (client_sock < 0) {
-                printf("Error creating socket\n");
-                return NULL;
-            }
-
-            // Connect to the client
-            struct sockaddr_in client;
-            client.sin_family = AF_INET;
-            client.sin_port = htons(12345);
-            client.sin_addr.s_addr = sender.sin_addr.s_addr;
-
-            if (connect(client_sock, (struct sockaddr*)&client, sizeof(client)) < 0) {
-                printf("Error connecting to client\n");
-                close(client_sock);
-                return NULL;
-            }
-
-            // Send the message
-            char message[] = "Hello from the server";
-            write(client_sock, message, strlen(message));
-            printf("Message sent to client\n");
-
-            // Close the socket
-            close(client_sock);
+            char* message = "Response";
+            // Send a response to the sender on the port 12345, that is the port the sender is listening on, but not the port the sender is sending from
+            sender.sin_port = htons(12345);
+            sendto(sock, message, strlen(message), 0, (struct sockaddr*)&sender, sender_len);
+            printf("Response sent to %s:%d\n", inet_ntoa(sender.sin_addr), ntohs(sender.sin_port));
         }
     }
     close(sock);
