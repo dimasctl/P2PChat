@@ -158,7 +158,7 @@ void* listen_broadcast(void* arg) {
     }
 
     // Continuously listen for broadcast messages
-    char** messages = (char**)malloc(10 * sizeof(char*));
+    char** messages = (char**)malloc(50 * sizeof(char*));
     int pointer = 0;
     while (1) {
         char buffer[1024];

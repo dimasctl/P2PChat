@@ -46,6 +46,7 @@ char* get_uuid() {
 }
 
 void add_client(client_info** head, char* ip, int port, char* id) {
+    // if the list is empty, add the client to the head
     if (*head == NULL) {
         *head = (client_info*)malloc(sizeof(client_info));
         (*head)->next = NULL;
@@ -57,12 +58,22 @@ void add_client(client_info** head, char* ip, int port, char* id) {
 
     client_info* current = *head;
     while (current->next != NULL) {
-        if (strcmp(current->next->ip, ip) == 0 && current->next->port == port) {
+        // if the client is already in the list, update the ip and port
+        if (strcmp(current->id, id) == 0) {
+            current->ip = ip;
+            current->port = port;
             return;
         }
         current = current->next;
     }
 
+    // if the client is already in the list, update the ip and port
+    if(strcmp(current->id, id) == 0) {
+        current->ip = ip;
+        current->port = port;
+        return;
+    }
+    // add the client to the end of the list
     current->next = (client_info*)malloc(sizeof(client_info));
     current = current->next;
     current->ip = ip;
@@ -105,13 +116,13 @@ client_info* print_clients(client_info* head) {
         if (c == 'q') {
             exit(EXIT_SUCCESS);
         }
-        if (c == 'w' || c == 'h') {
+        if (c == 's' || c == 'j') {
             select++;
             if (select == i) {
                 select = 0;
             }
         }
-        if (c == 's' || c == 'j') {
+        if (c == 'w' || c == 'k') {
             select--;
             if (select == -1) {
                 select = i - 1;
