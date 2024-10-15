@@ -10,6 +10,7 @@
 #include <pthread.h>
 
 void* listen_broadcast(void* arg);
+extern client_info* client_list;
 
 // Function to measure time taken between two points
 #include <time.h>
@@ -96,7 +97,6 @@ void* server() {
     getsockname(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
 
     // start broadcasting listener
-    printf("asdfasdf"); fflush(stdout);
     int port = (int)ntohs(address.sin_port);
     pthread_t broadcast_thread;
     if (pthread_create(&broadcast_thread, NULL, listen_broadcast, &port) != 0) {
@@ -107,7 +107,7 @@ void* server() {
     printf("Server setup complete. Listening on port %d\n", ntohs(address.sin_port));
 
     // Continuously accept incoming connections
-    while (1) {
+while (1) {
         // Listening for incoming connections
         if (listen(server_fd, 3) < 0) {
             perror("listen failed");
@@ -158,6 +158,8 @@ void* listen_broadcast(void* arg) {
     }
 
     // Continuously listen for broadcast messages
+    char** messages = (char**)malloc(10 * sizeof(char*));
+    int pointer = 0;
     while (1) {
         char buffer[1024];
         struct sockaddr_in sender;
@@ -167,16 +169,25 @@ void* listen_broadcast(void* arg) {
         int len = recvfrom(sock, buffer, 1024, 0, (struct sockaddr*)&sender, &sender_len);
         buffer[len] = '\0';
 
-        // Print the broadcast message
-        printf("Broadcast message received from %s:%d - %s\n", inet_ntoa(sender.sin_addr), ntohs(sender.sin_port), buffer);
-
         if (strcmp(buffer, "Discovery") == 0) {
             char* message = get_uuid();
             // Send a response to the sender on the port 12345
             sender.sin_port = htons(12345);
             sendto(sock, port_str, strlen(port_str), 0, (struct sockaddr*)&sender, sender_len);
             sendto(sock, message, strlen(message), 0, (struct sockaddr*)&sender, sender_len);
-            printf("Response sent to %s:%d\n", inet_ntoa(sender.sin_addr), ntohs(sender.sin_port));
+        }
+        else {
+            // Save the IP address and message on an array
+            char* ip = inet_ntoa(sender.sin_addr);
+            char* message = (char*)malloc(len + 1);
+            strcpy(message, buffer);
+            message[len] = '\0';
+            messages[pointer] = ip;
+            messages[pointer +1] = message;
+            pointer = (pointer + 2) % 10;
+
+            // check if there are 2 messages from the same IP
+            process_messages(&client_list, messages);
         }
     }
     close(sock);

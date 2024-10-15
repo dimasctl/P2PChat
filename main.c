@@ -8,6 +8,8 @@
 
 #define PORT 8080
 
+#include "include/misc.h"
+client_info* client_list = NULL;
 #include "include/server.h"
 #include "include/client.h"
 
@@ -38,10 +40,10 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    while (1) {
-        send_broadcast();
-        sleep(5);
-    }
+    sleep(5);
+    send_broadcast();
+    sleep(5);
+    print_clients(client_list);
 
     while (1) {
         char* message;
