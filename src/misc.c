@@ -89,16 +89,36 @@ client_info* print_clients(client_info* head) {
         printf("\033[H\033[J");
 
         // print my uuid
-        printf("My UUID: %s\n", get_uuid());
+        printf("       Your UUID: %s\n\n", get_uuid());
+
+        // switch color to green
+        printf("\033[0;32m");
+        printf("                         WELCOME TO\n");
+        printf("   ██████╗ ██████╗ ██████╗  ██████╗██╗  ██╗ █████╗ ████████╗\n");
+        printf("   ██╔══██╗╚════██╗██╔══██╗██╔════╝██║  ██║██╔══██╗╚══██╔══╝\n");
+        printf("   ██████╔╝ █████╔╝██████╔╝██║     ███████║███████║   ██║   \n");
+        printf("   ██╔═══╝ ██╔═══╝ ██╔═══╝ ██║     ██╔══██║██╔══██║   ██║   \n");
+        printf("   ██║     ███████╗██║     ╚██████╗██║  ██║██║  ██║   ██║   \n");
+        printf("   ╚═╝     ╚══════╝╚═╝      ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   \n");
+        printf("q: Quit; r: Rescan; w/j/↑: Up; s/k/↓: Down; Space/Enter: Select\n");
+        printf("\n");
+
+        // switch color to white
+        printf("\033[0m");
 
         client_info* current = head;
         int i=0;
         while (current != NULL) {
-            // if the client is selected, print the client in green
+            // if the client is selected, print the client in black with green background
             if (select == i) {
-                printf("\033[0;32m");
+                printf("\033[0;30;42m");
             }
-            printf("Client %d: %s:%d %s\n", i, current->ip, current->port, current->id);
+            printf("Client %d: %s:%d %s", i, current->ip, current->port, current->id);
+            if (strcmp(current->id, get_uuid()) == 0) {
+                printf("  (You)  \n");
+            } else {
+                printf("         \n");
+            }
             if (select == i) {
                 printf("\033[0m");
             }
@@ -110,8 +130,6 @@ client_info* print_clients(client_info* head) {
         system("stty cbreak");
         // read a single character
         char c = getchar();
-        // set input to receive line
-        system("stty cooked");
 
         if (c == 'q') {
             exit(EXIT_SUCCESS);
@@ -141,27 +159,37 @@ client_info* print_clients(client_info* head) {
             printf("Broadcast sent\n");
             sleep(5);
         }
+        if (c == '\033') {
+            getchar();
+            switch(getchar()) {
+                case 'A':
+                    select--;
+                    if (select == -1) {
+                        select = i - 1;
+                    }
+                    break;
+                case 'B':
+                    select++;
+                    if (select == i) {
+                        select = 0;
+                    }
+                    break;
+            }
+        }
+        // set input to receive line
+        system("stty cooked");
     }
 }
 
 void process_messages(client_info** head, char*** messages_array) {
     char** messages = *messages_array;
-    // print all the messages
-    printf("----------------------------------------\n");
-    for (int i = 0; i < 10; i++) {
-        if (messages[i] == NULL || strlen(messages[i]) == 0) {
-            break;
-        }
-        printf("%s\n", messages[i]); fflush(stdout);
-    }
-    int num_messages = 10;
+    int num_messages = 50;
     for (int i = 0; i < num_messages; i += 2) {
         if (messages[i] == NULL || strlen(messages[i]) == 0) {
             break;
         }
         char* ip1 = messages[i];      // IP address in position i
         char* message1 = messages[i + 1];  // Message in position i + 1
-        printf("i: %d - ip1: %s - message1: %s\n", i, ip1, message1); fflush(stdout);
 
         for (int j = i + 2; j < num_messages; j += 2) {
             if (messages[j] == NULL || strlen(messages[j]) == 0) {
@@ -169,7 +197,6 @@ void process_messages(client_info** head, char*** messages_array) {
             }
             char* ip2 = messages[j];      // IP address in position j
             char* message2 = messages[j + 1];  // Message in position j + 1
-            printf("j: %d - ip2: %s - message2: %s\n", j, ip2, message2); fflush(stdout);
 
             // Compare the two IP addresses
             if (ip1 == NULL || ip2 == NULL) {

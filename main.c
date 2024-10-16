@@ -30,7 +30,7 @@ typedef struct {
 char* get_input();
 
 int main() {
-    system("clear");
+    printf("\033[H\033[J");
     printf("Welcome to P2PChat!\n");
     fflush(stdout);
 
@@ -40,9 +40,9 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    sleep(5);
+    sleep(1);
     send_broadcast();
-    sleep(5);
+    sleep(2);
     print_clients(client_list);
 
     while (1) {
