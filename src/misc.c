@@ -46,40 +46,48 @@ char* get_uuid() {
 }
 
 void add_client(client_info** head, char* ip, int port, char* id) {
+    // print the whole list
+    client_info* current = *head;
+    while (current != NULL) {
+        printf("Client %s:%d %s\n", current->ip, current->port, current->id);
+        current = current->next;
+    }
     // if the list is empty, add the client to the head
     if (*head == NULL) {
         *head = (client_info*)malloc(sizeof(client_info));
-        (*head)->next = NULL;
-        (*head)->ip = ip;
+        (*head)->ip = strdup(ip);
         (*head)->port = port;
-        (*head)->id = id;
+        (*head)->id = strdup(id);
+        (*head)->next = NULL;
+        printf("Added client %s:%d %s to a new head\n", ip, port, id);
         return;
     }
 
-    client_info* current = *head;
-    while (current->next != NULL) {
-        // if the client is already in the list, update the ip and port
+    // if the client is already in the list, update the ip and port
+    current = *head;
+    while (current != NULL) {
         if (strcmp(current->id, id) == 0) {
-            current->ip = ip;
+            current->ip = strdup(ip);
             current->port = port;
+            printf("Updated client %s:%d %s\n", ip, port, id);
             return;
         }
         current = current->next;
     }
 
-    // if the client is already in the list, update the ip and port
-    if(strcmp(current->id, id) == 0) {
-        current->ip = ip;
-        current->port = port;
-        return;
+    // find the last client in the list
+    current = *head;
+    while (current->next != NULL) {
+        current = current->next;
     }
+
     // add the client to the end of the list
     current->next = (client_info*)malloc(sizeof(client_info));
-    current = current->next;
-    current->ip = ip;
-    current->port = port;
-    current->id = id;
-    current->next = NULL;
+    current->next->ip = strdup(ip);
+    current->next->port = port;
+    current->next->id = strdup(id);
+    current->next->next = NULL;
+    printf("Added client %s:%d %s\n", ip, port, id);
 }
 
 client_info* print_clients(client_info* head) {
@@ -148,10 +156,11 @@ client_info* print_clients(client_info* head) {
         }
         if (c == ' ' || c == '\n') {
             // return the selected client
-            current = head->next;
+            current = head;
             for (int j=0; j<select; j++) {
                 current = current->next;
             }
+            printf("\033[0m");
             return current;
         }
         if (c == 'r') {
@@ -184,47 +193,91 @@ client_info* print_clients(client_info* head) {
 void process_messages(client_info** head, char*** messages_array) {
     char** messages = *messages_array;
     int num_messages = 50;
-    for (int i = 0; i < num_messages; i += 2) {
+    // Check if two messages are from the same ip
+    for (int i = 0; i < num_messages; i++) {
         if (messages[i] == NULL || strlen(messages[i]) == 0) {
-            break;
+            continue;
         }
-        char* ip1 = messages[i];      // IP address in position i
-        char* message1 = messages[i + 1];  // Message in position i + 1
+        char* ip1 = messages[i];
+        char* message1 = messages[i + 1];
 
-        for (int j = i + 2; j < num_messages; j += 2) {
+        for (int j = i + 1; j < num_messages; j++) {
             if (messages[j] == NULL || strlen(messages[j]) == 0) {
-                break;
+                continue;
             }
-            char* ip2 = messages[j];      // IP address in position j
-            char* message2 = messages[j + 1];  // Message in position j + 1
+            char* ip2 = messages[j];
+            char* message2 = messages[j + 1];
 
-            // Compare the two IP addresses
-            if (ip1 == NULL || ip2 == NULL) {
-                break;
-            }
             if (strcmp(ip1, ip2) == 0) {
-                // check which message is the uuid and which is the port
-                char* uuid;
+                // Check which message is the client id and which is the port
+                char* id;
                 char* port;
                 if (strlen(message1) == UUID_LEN) {
-                    uuid = message1;
+                    id = message1;
                     port = message2;
-                }
-                else {
-                    uuid = message2;
+                } else {
+                    id = message2;
                     port = message1;
                 }
-                // add the client to the list
-                add_client(head, ip1, atoi(port), uuid);
 
-                // clear the messages
+                add_client(head, ip1, atoi(port), id);
+
+                // Clear the messages
                 messages[i] = NULL;
                 messages[i + 1] = NULL;
                 messages[j] = NULL;
                 messages[j + 1] = NULL;
-
-                break;
             }
         }
+    }
+}
+
+// Function to get the input from the user dynamically
+char* get_input() {
+  // Initialize the input buffer
+  char* input = NULL;
+  size_t len = 0;
+  ssize_t read;
+
+  read = getline(&input, &len, stdin);
+  // If there is only a newline character, try again
+  if (read == 1) {
+    free(input);
+    return get_input();
+  }
+
+  if (read == -1) {
+    perror("getline");
+    exit(EXIT_FAILURE);
+  }
+
+  // Remove the newline character from the input
+  input[strlen(input) - 1] = '\0';
+
+  return input;
+}
+
+// Function to chat with a client
+void chat_with(client_info* current) {
+    // clear the screen
+    printf("\033[H\033[J");
+
+    // print the client's ip, port, and id
+    printf("Client: %s:%d %s\n", current->ip, current->port, current->id); fflush(stdout);
+
+    while (1) {
+        // get the message from the user
+        char* message = get_input();
+
+        // if the message is ':q', quit the chat
+        if (strcmp(message, ":q") == 0) {
+            return;
+        }
+
+        // send the message to the client
+        send_message(message, current->ip, current->port);
+
+        // free the memory allocated by getline
+        free(message);
     }
 }

@@ -13,5 +13,7 @@ typedef struct info {
 char* get_uuid();
 void process_messages(client_info** head, char*** messages);
 client_info* print_clients(client_info* head);
+char* get_input();
+void chat_with(client_info* current);
 
 #endif

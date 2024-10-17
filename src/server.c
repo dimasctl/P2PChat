@@ -38,18 +38,18 @@ void* handle_receive_message(void* arg) {
 
     // Receive the IV
     unsigned char iv[AES_BLOCK_SIZE];
-    read(new_socket, iv, AES_BLOCK_SIZE);
+    recv(new_socket, iv, AES_BLOCK_SIZE, 0);
 
     // Receive the message length
     int message_len;
-    read(new_socket, &message_len, sizeof(int));
+    recv(new_socket, &message_len, sizeof(int), 0);
     message_len = ntohl(message_len);
 
     // Allocate memory for the message
     buffer = (unsigned char*)malloc(message_len * sizeof(unsigned char));
 
     // Receive the message
-    read(new_socket, buffer, message_len);
+    recv(new_socket, buffer, message_len, 0);
 
     // Decrypt the message
     char* decrypted_message = (char*)decrypt_message(buffer, &message_len, key, iv);
@@ -161,7 +161,7 @@ void* listen_broadcast(void* arg) {
     char** messages = (char**)malloc(50 * sizeof(char*));
     int pointer = 0;
     while (1) {
-        char buffer[1024];
+        char buffer[1024] = {0};
         struct sockaddr_in sender;
         socklen_t sender_len = sizeof(sender);
 
@@ -177,18 +177,16 @@ void* listen_broadcast(void* arg) {
             sendto(sock, message, strlen(message), 0, (struct sockaddr*)&sender, sender_len);
         }
         else {
-            // Save the IP address and message on an array
-            char* ip = inet_ntoa(sender.sin_addr);
-            char* message = (char*)malloc(len + 1);
-            strcpy(message, buffer);
-            message[len] = '\0';
-            messages[pointer] = ip;
-            messages[pointer +1] = message;
-            pointer = (pointer + 2) % 10;
+            // Save the IP address and message on an array in the format [0] = IP, [1] = message
+            messages[pointer] = inet_ntoa(sender.sin_addr);
+            messages[pointer + 1] = strdup(buffer);
+            pointer = pointer + 2;
 
             // check if there are 2 messages from the same IP
             process_messages(&client_list, &messages);
         }
+        // Clear the buffer
+        memset(buffer, 0, 1024);
     }
     close(sock);
     return NULL;

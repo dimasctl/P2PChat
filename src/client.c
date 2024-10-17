@@ -49,8 +49,6 @@ int send_message(char* message, char* ip, int port) {
         return 1;
     }
 
-    printf("Connected to server. Sending message...\n");
-
     // Generate the key and IV
     size_t shared_key_len = AES_256_KEY_SIZE;
     unsigned char iv[AES_BLOCK_SIZE];
@@ -62,16 +60,15 @@ int send_message(char* message, char* ip, int port) {
     unsigned char* ciphertext = encrypt_message((unsigned char*)message, &message_size, key, iv);
 
     // Send the IV
-    write(sock, iv, AES_BLOCK_SIZE);
+    send(sock, iv, AES_BLOCK_SIZE, 0);
 
     // Send message size to server
     message_size = htonl(message_size);
-    write(sock, &message_size, sizeof(int));
+    send(sock, &message_size, sizeof(int), 0);
 
 
     // Send message to server
-    write(sock, ciphertext, message_size);
-    printf("Message '%s' sent\n", message);
+    send(sock, ciphertext, message_size, 0);
     fflush(stdout);
 
     // Close the socket

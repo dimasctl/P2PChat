@@ -27,8 +27,6 @@ typedef struct {
     Connection* connections;
 } ConnectionList;
 
-char* get_input();
-
 int main() {
     printf("\033[H\033[J");
     printf("Welcome to P2PChat!\n");
@@ -42,8 +40,11 @@ int main() {
 
     sleep(1);
     send_broadcast();
-    sleep(2);
-    print_clients(client_list);
+    sleep(1);
+    while (1) {
+        client_info* current = print_clients(client_list);
+        chat_with(current);
+    }
 
     while (1) {
         char* message;
@@ -74,29 +75,4 @@ int main() {
     pthread_join(server_thread, NULL);
 
     return 0;
-}
-
-// Function to get the input from the user dynamically
-char* get_input() {
-  // Initialize the input buffer
-  char* input = NULL;
-  size_t len = 0;
-  ssize_t read;
-
-  read = getline(&input, &len, stdin);
-  // If there is only a newline character, try again
-  if (read == 1) {
-    free(input);
-    return get_input();
-  }
-
-  if (read == -1) {
-    perror("getline");
-    exit(EXIT_FAILURE);
-  }
-
-  // Remove the newline character from the input
-  input[strlen(input) - 1] = '\0';
-
-  return input;
 }
