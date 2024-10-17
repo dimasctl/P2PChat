@@ -46,12 +46,6 @@ char* get_uuid() {
 }
 
 void add_client(client_info** head, char* ip, int port, char* id) {
-    // print the whole list
-    client_info* current = *head;
-    while (current != NULL) {
-        printf("Client %s:%d %s\n", current->ip, current->port, current->id);
-        current = current->next;
-    }
     // if the list is empty, add the client to the head
     if (*head == NULL) {
         *head = (client_info*)malloc(sizeof(client_info));
@@ -59,17 +53,15 @@ void add_client(client_info** head, char* ip, int port, char* id) {
         (*head)->port = port;
         (*head)->id = strdup(id);
         (*head)->next = NULL;
-        printf("Added client %s:%d %s to a new head\n", ip, port, id);
         return;
     }
 
     // if the client is already in the list, update the ip and port
-    current = *head;
+    client_info* current = *head;
     while (current != NULL) {
         if (strcmp(current->id, id) == 0) {
             current->ip = strdup(ip);
             current->port = port;
-            printf("Updated client %s:%d %s\n", ip, port, id);
             return;
         }
         current = current->next;
@@ -87,7 +79,6 @@ void add_client(client_info** head, char* ip, int port, char* id) {
     current->next->port = port;
     current->next->id = strdup(id);
     current->next->next = NULL;
-    printf("Added client %s:%d %s\n", ip, port, id);
 }
 
 client_info* print_clients(client_info* head) {
@@ -165,7 +156,7 @@ client_info* print_clients(client_info* head) {
         }
         if (c == 'r') {
             send_broadcast();
-            printf("Broadcast sent\n");
+            printf("\nRescanning...\n");
             sleep(5);
         }
         if (c == '\033') {

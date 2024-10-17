@@ -115,7 +115,6 @@ while (1) {
         }
 
         // Accepting incoming connection
-        printf("Accepting incoming connection from the client at %s:%d\n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
         if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
             perror("accept failed");
             exit(EXIT_FAILURE);

@@ -101,7 +101,6 @@ void send_broadcast() {
     // Send the message
     char message[] = "Discovery";
     sendto(sock, message, strlen(message), 0, (struct sockaddr*)&server, sizeof(server));
-    printf("Broadcast message sent\n");
 
     // Close the socket
     close(sock);
